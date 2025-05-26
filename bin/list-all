@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REGISTRY_URL="https://dl.static-php.dev/static-php-cli/bulk/"
+
+# Fetch the index page and extract versions
+curl -s "$REGISTRY_URL" | grep -oP 'php-\K[0-9]+\.[0-9]+\.[0-9]+' | sort -u

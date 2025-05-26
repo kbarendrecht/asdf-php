@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+version="${ASDF_INSTALL_VERSION:-}"
+install_path="${ASDF_INSTALL_PATH:-}"
+tool_name="php"
+registry_url="https://dl.static-php.dev/static-php-cli/bulk"
+
+composer_install() {
+	local php="$install_path/bin/php"
+	local expected_checksum actual_checksum
+
+	cd "$install_path"
+	expected_checksum="$("$php" -r "copy('https://composer.github.io/installer.sig', 'php://stdout');")"
+	"$php" -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+	actual_checksum="$("$php" -r "echo hash_file('sha384', 'composer-setup.php');")"
+
+	if [ "$expected_checksum" != "$actual_checksum" ]; then
+		printf "[ERROR] Invalid Composer installer checksum\n" >&2
+		rm composer-setup.php
+		return 1
+	fi
+
+	"$php" composer-setup.php --quiet
+	local result=$?
+	rm composer-setup.php
+	mv composer.phar "$install_path/bin/composer"
+	return $result
+}
+
+# Detect platform
+case "$(uname -s)" in
+  Linux) os="linux" ;;
+  Darwin) os="macos" ;;
+  *) echo "Unsupported OS" ; exit 1 ;;
+esac
+
+case "$(uname -m)" in
+  x86_64) arch="x86_64" ;;
+  aarch64 | arm64) arch="aarch64" ;;
+  *) echo "Unsupported architecture" ; exit 1 ;;
+esac
+
+filename="php-${version}-cli-${os}-${arch}.tar.gz"
+download_url="${registry_url}/${filename}"
+download_path="${install_path}/${filename}"
+
+(
+  mkdir -p "$install_path" || exit 11
+
+  echo "Downloading $download_url"
+  curl --silent --show-error --fail -Lo "$download_path" "$download_url" || exit 21
+
+  echo "Extracting to $install_path"
+  tar -xzf "$download_path" -C "$install_path" || exit 31
+  rm "$download_path"
+
+  php_bin="$(find "$install_path" -maxdepth 1 -type f -name php -perm -111 | head -n 1)"
+  if [[ -z "$php_bin" ]]; then
+    echo "Expected an executable php binary directly in $install_path"
+    exit 41
+  fi
+
+  mkdir -p "$install_path/bin"
+  ln -sf "$php_bin" "$install_path/bin/php" || exit 51
+
+  "$install_path/bin/php" --version || exit 61
+
+  composer_install "$install_path" || echo "Failed to install Composer"
+
+  echo "$tool_name $version installation was successful!"
+)

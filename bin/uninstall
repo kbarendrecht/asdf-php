@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+rm -rf "$ASDF_INSTALL_PATH"
+echo "PHP version at $ASDF_INSTALL_PATH uninstalled."

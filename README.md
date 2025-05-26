@@ -1,0 +1,1 @@
+asdf wrapper for https://github.com/crazywhalecc/static-php-cli
