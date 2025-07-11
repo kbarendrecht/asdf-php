@@ -3,9 +3,22 @@ set -euo pipefail
 
 REGISTRY_URL="https://dl.static-php.dev/static-php-cli/bulk/"
 
-# Fetch the index page and extract versions
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  curl "$REGISTRY_URL" | sed -n 's/.*php-\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' | sort -uV
+# Detect platform
+case "$(uname -s)" in
+  Linux) os="linux" ;;
+  Darwin) os="macos" ;;
+  *) echo "Unsupported OS" >&2; exit 1 ;;
+esac
+
+case "$(uname -m)" in
+  x86_64) arch="x86_64" ;;
+  aarch64 | arm64) arch="aarch64" ;;
+  *) echo "Unsupported architecture" >&2; exit 1 ;;
+esac
+
+# Fetch the index page and extract versions for current OS/arch
+if [[ "$os" == "macos" ]]; then
+  curl "$REGISTRY_URL" | sed -n "s/.*php-\([0-9]\+\.[0-9]\+\.[0-9]\+\)-cli-${os}-${arch}\.tar\.gz.*/\1/p" | sort -uV
 else
-  curl -s "$REGISTRY_URL" | grep -oP 'php-\K[0-9]+\.[0-9]+\.[0-9]+' | sort -uV
+  curl -s "$REGISTRY_URL" | grep -oP "php-\K[0-9]+\.[0-9]+\.[0-9]+(?=-cli-${os}-${arch}\.tar\.gz)" | sort -uV
 fi
