@@ -18,7 +18,7 @@ esac
 
 # Fetch the index page and extract versions for current OS/arch, return the latest
 if [[ "$os" == "macos" ]]; then
-  curl "$REGISTRY_URL" | sed -n "s/.*php-\([0-9]\+\.[0-9]\+\.[0-9]\+\)-cli-${os}-${arch}\.tar\.gz.*/\1/p" | sort -uV | tail -n 1
+  curl -s  "$REGISTRY_URL" | sed -n "s/.*php-\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)-cli-${os}-${arch}\.tar\.gz.*/\1/p" | sort -uV | tail -n 1
 else
   curl -s "$REGISTRY_URL" | grep -oP "php-\K[0-9]+\.[0-9]+\.[0-9]+(?=-cli-${os}-${arch}\.tar\.gz)" | sort -uV | tail -n 1
 fi
