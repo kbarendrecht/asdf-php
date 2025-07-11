@@ -2,6 +2,11 @@
 set -euo pipefail
 
 version="${ASDF_INSTALL_VERSION:-}"
+
+# Resolve 'latest' to latest stable version
+if [[ "$version" == "latest" ]]; then
+  version="$(bash "$(dirname "$0")/latest-stable")"
+fi
 install_path="${ASDF_INSTALL_PATH:-}"
 tool_name="php"
 registry_url="https://dl.static-php.dev/static-php-cli/bulk"
